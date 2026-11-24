@@ -2,9 +2,9 @@ package sallergy.dev.service;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import sallergy.dev.Student;
+import sallergy.dev.TransactionHelper;
 
 import java.util.List;
 
@@ -12,49 +12,44 @@ import java.util.List;
 public class StudentService {
 
     private SessionFactory sessionFactory;
+    private final TransactionHelper transactionHelpert;
 
-    public StudentService(SessionFactory sessionFactory) {
+    public StudentService(SessionFactory sessionFactory, TransactionHelper transactionHelpert) {
         this.sessionFactory = sessionFactory;
+        this.transactionHelpert = transactionHelpert;
     }
 
     public Student saveStudent(Student student) {
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.persist(student);
-        session.getTransaction().commit();
-        session.close();
-        return student;
+        return transactionHelpert.executeInTransactionReturn(session -> {
+            session.persist(student);
+            return student;
+        });
     }
 
     public void deleteStudent(Long id) {
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
-        Student studentForDelete = session.find(Student.class, id);
-        session.remove(studentForDelete);
-        session.close();
+        transactionHelpert.executeInTransaction(session -> {
+            Student studentForDelete = session.find(Student.class, id);
+            session.remove(studentForDelete);
+        });
     }
 
     public Student updateStudent(Student student) {
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
-        student = session.merge(student);
-        session.close();
-        return student;
+        return transactionHelpert.executeInTransactionReturn(session -> {
+            session.merge(student);
+            return student;
+        });
     }
 
     public Student getById(Long id) {
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
-        Student student = session.find(Student.class, id);
-        session.close();
-        return student;
+        try (Session session = sessionFactory.openSession();) {
+            return session.find(Student.class, id);
+        }
     }
 
     public List<Student> findAll(){
-        Session session = sessionFactory.openSession();
-        List<Student> students = session.createQuery("SELECT s FROM Student s", Student.class).list();
-        session.close();
-        return students;
+        try (Session session = sessionFactory.openSession();) {
+            return session.createQuery("SELECT s FROM Student s", Student.class).list();
+        }
     }
 
 }

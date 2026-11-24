@@ -2,6 +2,9 @@ package sallergy.dev;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "students")
 public class Student {
@@ -16,12 +19,41 @@ public class Student {
     @Column(name="student age")
     private Integer age;
 
+    @OneToOne(mappedBy = "student", cascade = CascadeType.REMOVE)
+    private Profile profile;
+
+    @ManyToOne
+    @JoinColumn(name = "group id")
+    private Group group;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "student_courses", joinColumns = @JoinColumn(name = "student_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "course_id", referencedColumnName = "id"))
+    private List<Course> courses = new ArrayList<>();
+
+    public List<Course> getCourses() {
+        return courses;
+    }
+
+    public void setCourses(List<Course> courses) {
+        this.courses = courses;
+    }
+
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Profile profile) {
+        this.profile = profile;
+    }
+
     public Student() {
     }
 
-    public Student(String name, Integer age) {
+    public Student(String name, Integer age, Group group) {
         this.name = name;
         this.age = age;
+        this.group = group;
+
     }
 
     public void setId(Long id) {
@@ -54,6 +86,9 @@ public class Student {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", age=" + age +
+                ", profile=" + profile +
+                ", group=" + group +
+                ", courses=" + courses +
                 '}';
     }
 }

@@ -1,0 +1,47 @@
+package sallergy.dev.service;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.springframework.stereotype.Service;
+import sallergy.dev.Course;
+import sallergy.dev.Group;
+import sallergy.dev.Student;
+import sallergy.dev.TransactionHelper;
+
+import java.util.List;
+
+@Service
+public class CourseService {
+    private final SessionFactory sessionFactory;
+    private final TransactionHelper transactionHelper;
+
+    public CourseService(SessionFactory sessionFactory, TransactionHelper transactionHelper) {
+        this.sessionFactory = sessionFactory;
+        this.transactionHelper = transactionHelper;
+    }
+
+    public Course saveCourse(Course course) {
+        return transactionHelper.executeInTransactionReturn(session -> {
+            session.persist(course);
+            return course;
+        });
+    }
+
+    public void enrollStudentToCourse(Long courseId, Long studentId) {
+        transactionHelper.executeInTransaction(session -> {
+//            var student = session.find(Student.class, studentId);
+//            var course = session.find(Course.class, courseId);
+//
+//            student.getCourses().add(course);
+            String sql = """
+                    INSERT INTO student_courses (student_id, course_id)
+                    VALUES (:studentId, :courseId)
+                    """;
+
+            session.createNativeMutationQuery(sql)
+                    .setParameter("studentId", studentId)
+                    .setParameter("courseId", courseId)
+                    .executeUpdate();
+        });
+    }
+}
